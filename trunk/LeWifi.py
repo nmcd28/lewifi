@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# lewifi.py
+# LeWifi.py
 # version .081
 # by Carl F Karsten
 
