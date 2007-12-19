@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # lewifi.py
+# by Carl F Karsten
 
 from pythonwifi.iwlibs import Wireless
 import wx
