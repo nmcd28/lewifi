@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # lewifi.py
+# version .081
 # by Carl F Karsten
 
 from pythonwifi.iwlibs import Wireless
@@ -18,7 +19,7 @@ def wifidata(iface):
 
 def getifname():
     """
-    returns the interface name - typically eth1.
+    returns the interface name - typically 'eth1'
     currently just uses the first wireless one it finds.
     """
     from pythonwifi.iwlibs import getNICnames
@@ -38,7 +39,6 @@ class MyFrame(wx.Frame):
 
         # Add: the Canvas
         self.Canvas = NavCanvas.NavCanvas(self,-1,
-                                     size = (500,500),
                                      ProjectionFun = None,
                                      Debug = 0,
                                      BackgroundColor = "DARK SLATE BLUE",
@@ -56,24 +56,36 @@ class MyFrame(wx.Frame):
 
     def OnMouseEvent(self, event):
         if event.LeftDown():
-            # x, y = event.GetX(),event.GetY()
-            x, y = tuple(event.Coords)
+            x,y=tuple(event.Coords)
             x,y=int(x),int(y)
 
             # get current wifi signal data
-            qual = wifidata(self.wifi)
             # qual.quality, qual.signallevel, qual.noiselevel,
+            qual = wifidata(self.wifi)
             spot=( x,y, qual.quality, qual.signallevel, qual.noiselevel)        
+
+            # save to file, draw on screen
             self.savespot(*spot)
             self.plotspot(*spot)        
+
             self.Canvas.Draw(True)
 
     def OnMove(self, event):
+        """
+        This is useles now, 
+        but could be handy if some sort of GPS can be hooked in
+        """
         self.SetStatusText("%.2f, %.2f"%tuple(event.Coords))
 
     def savespot(self, *args):
+        """
+        write out a data point.
+        x,y and raw signal data.
+        """
         print args
+        # make a comma delimited NL terminated row
         row = ', '.join(str(a) for a in args)
+        # appened it.
         file(datafile,'a').write( row+"\n" )
 
     def plotspot(self, x, y, quality, level, noise):
@@ -82,7 +94,8 @@ class MyFrame(wx.Frame):
         Signal quality is used to determine color of dot,
         with arbritrary cutoffs at 85 and 65.
         Signal Level is used for the size        
-        Noise is the width of the outline, can drown out signal
+        Noise defines the width of the outline, 
+        enough noise can drown out signal
         """
 
         # once alpha is working with FloatCanvas, 
@@ -102,7 +115,7 @@ class MyFrame(wx.Frame):
 
         nalpha = 128
         nWidth = abs(noise/3)
-        nColor = wx.Colour(0, 255, 255, nalpha)
+        nColor = wx.Colour(0, 0, 0, nalpha)
 
         self.Canvas.AddCircle((x,y), radius,
                          LineColor = nColor,
@@ -112,6 +125,9 @@ class MyFrame(wx.Frame):
 
 
     def plot_file(self):
+        """
+        plot existing data saved from previous run
+        """
         try:
             for row in file(datafile).readlines():
                 spot=[int(x) for x in row.split(',')]
@@ -127,7 +143,8 @@ class MyApp(wx.App):
         frame.Show(True)
         self.SetTopWindow(frame)
         
-        # This needs to be tied to a pretty UI, 
+        # This needs to be tied to a pretty UI,
+        # and accept a command line parameter.
         # and it needs to be moved out of the gui setup.
         ifname=getifname()        
         frame.wifi = Wireless(ifname)
