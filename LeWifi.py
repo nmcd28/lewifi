@@ -3,7 +3,7 @@
 # version .081
 # by Carl F Karsten
 
-import sys
+import sys, os.path
 from optparse import OptionParser
 from pythonwifi.iwlibs import Wireless, getNICnames
 import wx
@@ -13,12 +13,16 @@ from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 # datafile = 'carlland.dat'
 
 parser = OptionParser()
-parser.add_option("-f", dest="floorplan", default="carlland.png",
+parser.add_option("-f", dest="floorplan", default="floorplan.png",
                   help="Image file to use for the floor plan.")
-parser.add_option("-d", dest="datafile", default="carlland.dat",
-                  help="Data file to write to.")
+parser.add_option("-d", dest="datafile", 
+                  help="Data file to write to. (defaults to <floorplan>.dat)")
  
 (options, args) = parser.parse_args()
+
+# construct a datafile name from image name
+if not options.datafile:
+    options.datafile = os.path.splitext(options.floorplan)[0]+'.dat'
 
 def wifidata(iface):
     """
