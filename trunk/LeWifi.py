@@ -7,8 +7,8 @@ from pythonwifi.iwlibs import Wireless
 import wx
 from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 
-floorplan = 'carlfloorplan.png'
-datafile = 'carlfloorplan.dat'
+floorplan = 'carlland.jpg'
+datafile = 'carlland.dat'
 
 def wifidata(iface):
     """
@@ -111,12 +111,17 @@ class MyFrame(wx.Frame):
         else:
             qColor= wx.Colour(255, 0, 0, qalpha) # red
 
-        radius = 3+abs(level)
+        radius = 100+level # level goes from 0 to -100
 
         nalpha = 128
         nWidth = abs(noise/3)
         nColor = wx.Colour(0, 0, 0, nalpha)
 
+	# scale down the size of the dot/border
+	scale = 3
+	radius=radius/scale
+	nWidth=nWidth/scale
+	
         self.Canvas.AddCircle((x,y), radius,
                          LineColor = nColor,
                          LineWidth = nWidth,
