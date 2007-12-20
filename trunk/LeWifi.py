@@ -3,12 +3,22 @@
 # version .081
 # by Carl F Karsten
 
-from pythonwifi.iwlibs import Wireless
+import sys
+from optparse import OptionParser
+from pythonwifi.iwlibs import Wireless, getNICnames
 import wx
 from wx.lib.floatcanvas import NavCanvas, FloatCanvas
 
-floorplan = 'carlland.jpg'
-datafile = 'carlland.dat'
+# floorplan = 'carlland.jpg'
+# datafile = 'carlland.dat'
+
+parser = OptionParser()
+parser.add_option("-f", dest="floorplan", default="carlland.png",
+                  help="Image file to use for the floor plan.")
+parser.add_option("-d", dest="datafile", default="carlland.dat",
+                  help="Data file to write to.")
+ 
+(options, args) = parser.parse_args()
 
 def wifidata(iface):
     """
@@ -26,6 +36,7 @@ def getifname():
     ifaces=getNICnames()
     iface=ifaces[0]
     if len(ifaces)>1:
+        # only print if it might not be the right one.
         print "Found these interfaces: %s" % (ifaces,)
         print "using the first one: %s" % (iface,)
 
@@ -44,25 +55,27 @@ class MyFrame(wx.Frame):
                                      BackgroundColor = "DARK SLATE BLUE",
                                      ).Canvas
 
-        Image = wx.Image(floorplan)
-        self.Canvas.AddScaledBitmap(Image, (0,0), Height = Image.GetSize()[1], Position = "tl")
+        Image = wx.Image(options.floorplan)
+        self.Canvas.AddScaledBitmap(Image, (0,0), Height=Image.GetSize()[1])
 
         FloatCanvas.EVT_MOTION(self.Canvas, self.OnMove )
         self.Canvas.Bind(FloatCanvas.EVT_LEFT_DOWN, self.OnMouseEvent)
-
         self.Center()
         self.plot_file()
-        
 
     def OnMouseEvent(self, event):
         if event.LeftDown():
-            x,y=tuple(event.Coords)
-            x,y=int(x),int(y)
+            x,y = tuple(event.Coords)
+            x,y = int(x),int(y)
 
             # get current wifi signal data
             # qual.quality, qual.signallevel, qual.noiselevel,
             qual = wifidata(self.wifi)
-            spot=( x,y, qual.quality, qual.signallevel, qual.noiselevel)        
+            if qual is None:
+                print "No wifi interface: can't plot"
+                return
+
+            spot = ( x,y, qual.quality, qual.signallevel, qual.noiselevel)        
 
             # save to file, draw on screen
             self.savespot(*spot)
@@ -71,31 +84,25 @@ class MyFrame(wx.Frame):
             self.Canvas.Draw(True)
 
     def OnMove(self, event):
-        """
-        This is useles now, 
-        but could be handy if some sort of GPS can be hooked in
-        """
+        # This is useles now, 
+        # but could be handy if some sort of GPS can be hooked in
         self.SetStatusText("%.2f, %.2f"%tuple(event.Coords))
 
     def savespot(self, *args):
-        """
-        write out a data point.
-        x,y and raw signal data.
+        """Write out a data point. x,y and raw signal data.
         """
         print args
         # make a comma delimited NL terminated row
         row = ', '.join(str(a) for a in args)
         # appened it.
-        file(datafile,'a').write( row+"\n" )
+        file(options.datafile, 'a').write(row+"\n")
 
     def plotspot(self, x, y, quality, level, noise):
-        """
-        draws a spot for a data point.
-        Signal quality is used to determine color of dot,
-        with arbritrary cutoffs at 85 and 65.
-        Signal Level is used for the size        
-        Noise defines the width of the outline, 
-        enough noise can drown out signal
+        """Draw a spot for a data point.
+
+        Signal quality is used to determine color of dot, with arbritrary 
+        cutoffs at 85 and 65. Signal Level is used for the size. Noise 
+        defines the width of the outline, enough noise can drown out signal.
         """
 
         # once alpha is working with FloatCanvas, 
@@ -130,12 +137,10 @@ class MyFrame(wx.Frame):
 
 
     def plot_file(self):
-        """
-        plot existing data saved from previous run
-        """
+        """Plot existing data saved from previous run."""
         try:
-            for row in file(datafile).readlines():
-                spot=[int(x) for x in row.split(',')]
+            for row in file(options.datafile).readlines():
+                spot = [int(x) for x in row.split(',')]
                 self.plotspot(*spot)
         except IOError, e:
             #  'errno', 'filename', 'message', 'strerror']
@@ -151,9 +156,11 @@ class MyApp(wx.App):
         # This needs to be tied to a pretty UI,
         # and accept a command line parameter.
         # and it needs to be moved out of the gui setup.
-        ifname=getifname()        
-        frame.wifi = Wireless(ifname)
-
+        ifname = getifname()
+        if ifname:        
+            frame.wifi = Wireless(ifname)
+        else:
+            frame.wifi = None
         return True
 
 app = MyApp(0)
