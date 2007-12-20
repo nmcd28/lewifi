@@ -17,6 +17,11 @@ parser.add_option("-f", dest="floorplan", default="floorplan.png",
                   help="Image file to use for the floor plan.")
 parser.add_option("-d", dest="datafile", 
                   help="Data file to write to. (defaults to <floorplan>.dat)")
+
+ifaces=getNICnames()
+iface=ifaces[0]
+parser.add_option("-i", dest="ifname", choices=ifaces, default=iface,
+                  help="interface. (defaults to first wifi device: %s)"% iface)
  
 (options, args) = parser.parse_args()
 
@@ -30,21 +35,6 @@ def wifidata(iface):
     """
     stat, qual, discard, missed_beacon = iface.getStatistics()
     return qual
-
-def getifname():
-    """
-    returns the interface name - typically 'eth1'
-    currently just uses the first wireless one it finds.
-    """
-    from pythonwifi.iwlibs import getNICnames
-    ifaces=getNICnames()
-    iface=ifaces[0]
-    if len(ifaces)>1:
-        # only print if it might not be the right one.
-        print "Found these interfaces: %s" % (ifaces,)
-        print "using the first one: %s" % (iface,)
-
-    return iface
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, id, title):
@@ -157,14 +147,7 @@ class MyApp(wx.App):
         frame.Show(True)
         self.SetTopWindow(frame)
         
-        # This needs to be tied to a pretty UI,
-        # and accept a command line parameter.
-        # and it needs to be moved out of the gui setup.
-        ifname = getifname()
-        if ifname:        
-            frame.wifi = Wireless(ifname)
-        else:
-            frame.wifi = None
+        frame.wifi = Wireless(options.ifname)
         return True
 
 app = MyApp(0)
