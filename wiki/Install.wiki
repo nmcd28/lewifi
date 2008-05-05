@@ -6,9 +6,7 @@ It needs python-wifi, which is only available on Linux, maybe mac.  No clue what
 
 Ubuntu:
 
-sudo easy_install python-wifi 
-
-sudo apt-get install python-dev
+sudo easy_install python-wifi python-numpy
 
 wxPython - in particular FloatCanvas? for pan and zoom.
 
